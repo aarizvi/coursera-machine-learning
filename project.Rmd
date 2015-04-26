@@ -1,0 +1,97 @@
+Machine Learning Project
+====================================
+This is an R markdown document for the Coursera Machine Learning project.  The goal of this project was to predict the manner in which the individual performed the exercise.  This was labeled as the "classe" variable in the training set.  
+
+Cleaning and tidying datasets
+------------------------------------
+The raw datasets were downloaded and read into R as .csv files. The dataset referred to as 'training' was used as the complete dataset and the dataset referred to as 'testing' was used for validation purposes. Both the complete and validation datasets originally contained 160 variables.  In order to reduce bias and prevent overfitting, the columns that contained unnecessary information (subjective decision-making) for this project and were removed.  E.g. The first 7 columns did not contain information that would help prediction and all of the columns that had NAs were removed.  
+
+```{r}
+library(ggplot2); library(ISLR); library(caret)
+raw_dataset <- read.csv("pml-training.csv")
+validation <- read.csv("pml-testing.csv")
+
+raw_dataset[raw_dataset==""] <- NA #change blank spaces to NA
+dataset <- raw_dataset[,colSums(is.na(raw_dataset)) == 0]
+dataset <- dataset[,-(1:7)] #remove the first 7 columns which did not contain important information
+ 
+validation[validation==""] <- NA
+validation <- validation[,colSums(is.na(validation)) == 0]
+validation <- validation[,-(1:7)]
+```
+
+Data Slicing 
+------------------------------------
+The data was split into two groups: a training and a test set.  The createDataPartition function was used to create a stratified random split of the data.  The percentage of data that was chosen to go into the training set was 80%.  
+
+```{r}
+inTrain <- createDataPartition(y=dataset$classe, p=0.8,list=FALSE ) #create a training and test set
+
+training <- dataset[inTrain,]
+testing <- dataset[-inTrain,]
+```
+
+Visualizing Data
+------------------------------------
+The data was visualized using principal componenet analysis (PCA).  
+
+```{r}
+preProc <- preProcess(log2(abs(training[,-53])+0.01), method="pca", thresh=0.8)
+head(preProc$rotation) 
+trainPC <- predict(preProc, log2(abs(training[,-53]+0.01))) #log transformation is necessary in order to make the distribution of the data in a log scale to reduce variability, increase interpretability, and spread more uniformity in the graph
+
+qplot(PC1, PC2, data=trainPC, color=training$classe)
+qplot(PC2, PC4, data=trainPC, color=training$classe)
+```
+
+Only two figures are shown of the PCA, but in general they all showed the same trend -- that the data between "classe" variable was not definitively different between all other variables.  
+
+
+Model, Prediction, and Error
+------------------------------------
+Since the data did not show well-defined clusters that represented differences -- random forest algorithm seemed most appropriate to predict the model.  Random forests are good to use as a first cut when creating a decision-making tree for prediction when the underlying model is not well known.  
+
+The train function was used to implement to the random forest algorithm on the training set.  This function will set up a grid of tuning parameters, fit the model and calculate a resampling based performance measure.  
+
+```{r,echo=FALSE} 
+if(file.exists("ml_proj_alg1comp.RData")){
+  load("ml_proj_alg1comp.RData")} else {
+modFit <- train(class~.,method="rf",data=train)
+}
+```
+
+
+```{r,eval=FALSE}
+modFit <- train(class~.,method="rf",data=train)
+```
+
+
+```{r}
+pred <- predict(modFit,testing)
+conf.matrix <- confusionMatrix(testing$classe, pred)
+conf.matrix
+```
+
+A confusion matrix was created in order to present a cross-tabulation of observed and predicted classes with associated statistics.  The confusion matrix was created for the testing set using the training set as it's model. The confusion matrix showed that the predictions were very accurate in the testing set with an accuracy of 0.9959.  
+
+```{r}
+classes <- c("A","B","C","D","E")
+fpr <- round(1-conf.matrix$byClass[1:5], digits=3)
+errorstats <- cbind(classes, round(conf.matrix$byClass[1:5],digits=3), fpr)
+colnames(errorstats) <- c("Class", "Sensitivity", "False positive rate")
+errorstats
+```
+The false positive rate (type I error) was calculated by 1-sensitivity. The false positive rates for all the classes were relatively low -- reinforcing that the prediction analysis was conducted with minimal error.  
+
+Cross-Validation
+--------------------------------------
+The validation test set was used for cross-validation.  The predict function was used on the random forest was model against the validation test set.    
+
+```{r}
+pred_20 <- predict(modFit, validation[,-length(validation)])
+validation$predictions <- pred_20
+```
+
+The predictions were all correctly identified and submitted to the Coursera automated submission page for grading.  The remaining code for submission was not published in order to prevent violations of the Coursera Honor Code.  
+
+
