@@ -17,3 +17,4 @@ Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3YSLTivxU
 
 The R markdown of this project can be found in this repository under 'project.html'.  
 
+If the error occurs that states that the file has been truncated but you can view the full file - please download the "view the full file" that is labeled in blue and view the .html locally.  This should show proper visualization of the .html.  
