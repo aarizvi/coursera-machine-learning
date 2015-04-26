@@ -15,5 +15,5 @@ Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activ
 
 Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3YSLTivxU
 
-The R markdown of this project can be found in this repository.  
+The R markdown of this project can be found in this repository under 'project.html'.  
 
